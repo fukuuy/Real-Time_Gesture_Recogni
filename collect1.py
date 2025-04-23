@@ -81,7 +81,6 @@ def save_gesture_data(features, hlabel):
 def main():
     plt.ion()
     cap = cv2.VideoCapture(0)
-
     gui = GUI(save_gesture_data)
 
     while cap.isOpened() and not gui.should_exit:
@@ -95,20 +94,19 @@ def main():
         cv2.imshow('OneHand', cv2.flip(image, 1))
 
         if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                handxyz = []
-                for landmark in hand_landmarks.landmark:
-                    handxyz.extend([landmark.x, landmark.y, landmark.z])
-                handxyz = np.array(handxyz, dtype=np.float32)
-                handxyz = DATA.normalize_hand_data1(handxyz)
-                update_plot(handxyz)
+            hand_landmarks = results.multi_hand_landmarks[0]
+            mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            handxyz = []
+            for landmark in hand_landmarks.landmark:
+                handxyz.extend([landmark.x, landmark.y, landmark.z])
+            handxyz = np.array(handxyz, dtype=np.float32)
+            handxyz = DATA.normalize_hand_data1(handxyz)
+            update_plot(handxyz)
 
-                if gui.should_save:
-                    label = gui.get_label()
-                    save_gesture_data(handxyz, int(label))
-                    gui.reset_save_flag()
-
+        if gui.should_save:
+            label = gui.get_label()
+            save_gesture_data(handxyz, int(label))
+            gui.reset_save_flag()
         gui.update()
 
     cap.release()
