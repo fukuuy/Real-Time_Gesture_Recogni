@@ -10,7 +10,7 @@ def add_random_noise(data, noise_scale=0.01):
     return new_data
 
 
-def rotate_data(data, angle_range=20):
+def rotate_data(data, angle_range=25):
     if data.ndim == 1:
         data = data.reshape(1, -1)
     num_points = data.shape[1] // 3
