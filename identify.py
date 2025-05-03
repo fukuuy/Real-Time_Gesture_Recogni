@@ -41,6 +41,7 @@ class GesturePredictor:
         self.single_history = deque(maxlen=5)
         self.double_history = deque(maxlen=5)
         self.hand_colors = [(0, 0, 255), (255, 0, 0)]
+        self.confidence_threshold = 0.5
 
     def _create_id_to_name_mapping(self, label_dict):
         id_to_name = {}
@@ -61,36 +62,26 @@ class GesturePredictor:
         features = np.array(hand_data).reshape(1, -1)
         prediction = self.single_model.predict(features)[0]
         probability = np.max(self.single_model.predict_proba(features))
-
-        if probability > 0.4:
-            self.single_history.append(prediction)
-            if len(self.single_history) == self.single_history.maxlen:
-                final_id = max(set(self.single_history), key=self.single_history.count)
-                return self._get_gesture_name(final_id, 'single')
-        return None
+        return prediction, probability
 
     def predict_double_gesture(self, hands_data):
         if not hands_data[0] or not hands_data[1]:
-            return None
+            return None, 0.0
         normalized_data = DATA.normalize_hands_data(hands_data)
         left_hand = np.array(normalized_data[0]).reshape(21, 3)
         right_hand = np.array(normalized_data[1]).reshape(21, 3)
         features = np.concatenate([left_hand.flatten(), right_hand.flatten()]).reshape(1, -1)
         prediction = self.double_model.predict(features)[0]
         probability = np.max(self.double_model.predict_proba(features))
-
-        if probability > 0.4:
-            self.double_history.append(prediction)
-            if len(self.double_history) == self.double_history.maxlen:
-                final_id = max(set(self.double_history), key=self.double_history.count)
-                return self._get_gesture_name(final_id, 'double')
-        return None
+        return prediction, probability
 
     def process_frame(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = self.hands.process(image_rgb)
 
         hands_data = [[], []]
+        best_gesture = None
+        best_confidence = 0.0
 
         if results.multi_hand_landmarks:
             hand_count = len(results.multi_hand_landmarks)
@@ -105,17 +96,41 @@ class GesturePredictor:
 
             if hand_count == 1:
                 hand_data = hands_data[0] if hands_data[0] else hands_data[1]
-                hand_data = DATA.normalize_hand_data1(hand_data)
-                gesture_name = self.predict_single_gesture(hand_data)
-
-                if gesture_name is not None:
-                    cv2.putText(image, gesture_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                pred, prob = self.predict_single_gesture(hand_data)
+                if prob > self.confidence_threshold:
+                    self.single_history.append(pred)
+                    if len(self.single_history) == self.single_history.maxlen:
+                        final_id = max(set(self.single_history), key=self.single_history.count)
+                        best_gesture = self._get_gesture_name(final_id, 'single')
+                        best_confidence = prob
 
             elif hand_count == 2:
-                gesture_name = self.predict_double_gesture(hands_data)
-                if gesture_name is not None:
-                    cv2.putText(image, gesture_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                pred, prob = self.predict_double_gesture(hands_data)
+                if prob > self.confidence_threshold:
+                    self.double_history.append(pred)
+                    if len(self.double_history) == self.double_history.maxlen:
+                        final_id = max(set(self.double_history), key=self.double_history.count)
+                        best_gesture = self._get_gesture_name(final_id, 'double')
+                        best_confidence = prob
+                else:
+                    single_results = []
+                    for hand in hands_data:
+                        if hand:
+                            pred, prob = self.predict_single_gesture(hand)
+                            if prob > self.confidence_threshold:
+                                single_results.append((pred, prob))
+                    if single_results:
+                        best_pred, best_prob = max(single_results, key=lambda x: x[1])
+                        self.single_history.append(best_pred)
+                        if len(self.single_history) == self.single_history.maxlen:
+                            final_id = max(set(self.single_history), key=self.single_history.count)
+                            best_gesture = self._get_gesture_name(final_id, 'single')
+                            best_confidence = best_prob
 
+            if best_gesture:
+                cv2.putText(image, f"Gesture: {best_gesture}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.putText(image, f"Confidence: {best_confidence:.2f}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                            (0, 255, 0), 2)
         return image
 
 
@@ -131,7 +146,7 @@ if __name__ == "__main__":
         image = predictor.process_frame(image)
         cv2.imshow('Gesture Recognition', image)
 
-        if cv2.waitKey(1) & 0xFF == 27:  # ESCÍË³ö
+        if cv2.waitKey(1) & 0xFF == 27:  # ESCé€€å‡º
             break
 
     cap.release()
