@@ -138,9 +138,8 @@ if __name__ == "__main__":
     }
     DOUBLE_LABELS = {
         'love': [0],
-        'fuck you': [1],
-        'good': [2],
-        'ten': [3],
+        'good': [1],
+        'ten': [2],
     }
 
     if FILE_PATH == 'hand_dataset.csv':
