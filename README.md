@@ -53,7 +53,7 @@ The usage is similar to single-gesture data collection, and the data will be sav
 ```bash
 python train.py
 ```
-This script will load the specified dataset (by default, it is `data/hand2_dataset.csv`), perform data preprocessing, model training, and evaluation, and select the best model to save in the `weight` directory. You can modify the `FILE_PATH` variable in `train.py` according to your needs to select different datasets.
+This script will load the specified dataset (by default, it is `data/hand2_dataset.csv`), perform data preprocessing, model training, and evaluation, and select the best model to save in the `weight` directory. You can modify the `FILE_PATH` variable in `train.py` according to your needs to select different datasets, and modify the `SINGLE_LABELS` or `DOUBLE_LABELS` variables to configure label mapping.
 
 ### 3. Real-time Recognition
 #### Single-gesture real-time recognition
