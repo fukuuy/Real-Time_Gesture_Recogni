@@ -127,7 +127,7 @@ def evaluate_model(model, X_test, y_test):
 
 
 if __name__ == "__main__":
-    FILE_PATH = 'hand2_dataset.csv'
+    FILE_PATH = 'data/hand2_dataset.csv'
     SINGLE_LABELS = {
         'one': [0],
         'two': [1, 7],
@@ -138,14 +138,15 @@ if __name__ == "__main__":
     }
     DOUBLE_LABELS = {
         'love': [0],
-        'good': [1],
-        'ten': [2],
+        'fuck you': [1],
+        'good': [2],
+        'ten': [3],
     }
 
-    if FILE_PATH == 'hand_dataset.csv':
+    if FILE_PATH == 'data/hand_dataset.csv':
         dictionary = 'hand'
         LABELS = SINGLE_LABELS
-    elif FILE_PATH == 'hand2_dataset.csv':
+    elif FILE_PATH == 'data/hand2_dataset.csv':
         dictionary = 'hands'
         LABELS = DOUBLE_LABELS
     else:
